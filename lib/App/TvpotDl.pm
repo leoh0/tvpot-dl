@@ -67,6 +67,21 @@ sub get_video_id {
 
     return if !defined $url;
 
+    #http://tvpot.daum.net/v/v3a6exNXJcDGGadGdGXGvJL
+    if ( $url =~ /http:\/\/tvpot.daum.net\/v\/ (?<video_id_url> .+?)$/xmsi ) {
+        my $video_id = $LAST_PAREN_MATCH{video_id_url};
+
+        # Remove white spaces in video ID.
+        $video_id =~ s/\s+//xmsg;
+
+        if ( !is_valid_video_id($video_id) ) {
+            carp "Invalid video ID: $video_id";
+            return;
+        }
+
+        return $video_id;
+    }
+
     # http://tvpot.daum.net/best/Top.do?from=gnb#clipid=31946003
     if ( $url =~ /[#?&] clipid = (?<clip_id> \d+)/xmsi ) {
         $url = 'http://tvpot.daum.net/clip/ClipView.do?clipid='
@@ -98,10 +113,16 @@ sub get_video_id {
     my $video_id_pattern_4
         = qr{/video/viewer/VideoView.html [?] vid = (?<video_id> .+?) &}xmsi;
 
+    # controller/video/viewer/VideoView.html?vid=90-m2tl87zM$&play_loc=...
+    my $video_id_pattern_5
+        = qr{vid = (?<video_id> .+?) &}xmsi;
+
+#       carp "Invalid video ID: $video_id";
     if (   $document !~ $video_id_pattern_1
         && $document !~ $video_id_pattern_2
         && $document !~ $video_id_pattern_3
-        && $document !~ $video_id_pattern_4 )
+        && $document !~ $video_id_pattern_4
+        && $document !~ $video_id_pattern_5 )
     {
         carp 'Cannot find video ID';
         return;
